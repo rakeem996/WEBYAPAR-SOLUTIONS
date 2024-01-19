@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile Page</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .container {
+      width: 50%;
+      padding: 20px;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    #profileImagePreview {
+      max-width: 100%;
+      max-height: 300px;
+      margin-top: 10px;
+    }
+
+    .drop-area {
+      border: 2px dashed #ccc;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .drop-area.active {
+      border-color: #4caf50;
+    }
+
+    #viewButton,
+    #backButton {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 8px 16px;
+      background-color: #4caf50;
+      color: #fff;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      z-index: 1;
+    }
+
+    #backButton {
+      top: 10px;
+    }
+
+    .user-details {
+      display: none;
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 50%;
+      height: 100%;
+      background-color: #fff;
+      box-shadow: -5px 0 10px rgba(0, 0, 0, 0.1);
+      overflow-y: auto;
+    }
+
+    .user-ele {
+      margin-top: 5%;
+    }
+
+    .user-details-content {
+      padding: 10px;
+    }
+
+    .user-details img {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 5px;
+      display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%;
+    }
+
+    #userName{
+      background-color: rgb(230, 230, 230);
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    #userStatus{
+      color: red;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <% if(user.updated === true) { %>
+    <button id="viewButton" onclick="toggleUserDetails()">View</button>
+  <% } %>
+  <div class="container">
+    <h1>User Profile Page</h1>
+    <form action="/update-profile" method="post" enctype="multipart/form-data">
+      <div class="form-group">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <div class="drop-area" id="dropArea">
+          <label for="profileImage">Drag & Drop or Click to Upload Profile Image</label>
+          <input type="file" id="profileImage" name="profileImage" accept="image/*" class="form-control-file"
+            style="display: none;" required>
+          <img id="profileImagePreview" />
+        </div>
+      </div>
+      <button type="submit" onsubmit="reloadPage()" class="btn btn-primary">Update Profile</button>
+    </form>
+  </div>
+
+  <div class="user-details" id="userDetails">
+    <button id="backButton" onclick="toggleUserDetails()">Back</button>
+    <div class="user-details-content">
+      <!-- Add user details here -->
+      <h2>User Details</h2>
+      <!-- <img src="" alt="User Photo" id="userPhoto"> -->
+      <p class="user-ele">Name:</p>
+      <div id="userName"><span><%= user.avatar.name %></span></div>
+      <p class="user-ele">Photo:</p>
+      <img class="user-photo" src="data:image/<%=user.avatar.profileImage.contentType%>;base64,
+                  <%=user.avatar.profileImage.toString('base64')%>" alt="User Photo" id="userPhoto" >
+      <h3 id="userStatus" class="user-ele"><span><%= user.approvalStatus %></span></h3>
+    </div>
+  </div>
+
+  <script>
+    function reloadPage() {
+      location.reload(true);
+    }
+
+    function toggleUserDetails() {
+      const userDetails = document.getElementById('userDetails');
+      const viewButton = document.getElementById('viewButton');
+
+      if (userDetails.style.display === 'block') {
+        userDetails.style.display = 'none';
+        viewButton.style.display = 'block';
+      } else {
+        userDetails.style.display = 'block';
+        viewButton.style.display = 'none';
+
+        // Set user details (you can set actual data dynamically)
+        // document.getElementById('userName').innerText = 'John Doe';
+        // document.getElementById('userStatus').innerText = 'Approved';
+        // document.getElementById('userPhoto').src = 'https://via.placeholder.com/150';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const dropArea = document.getElementById('dropArea');
+      const profileImageInput = document.getElementById('profileImage');
+      const profileImagePreview = document.getElementById('profileImagePreview');
+
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+      });
+
+      function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      dropArea.addEventListener('dragenter', () => {
+        dropArea.classList.add('active');
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, () => {
+          dropArea.classList.remove('active');
+        });
+      });
+
+      dropArea.addEventListener('drop', handleDrop);
+
+      function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+
+        handleFiles(files);
+      }
+
+      function handleFiles(files) {
+        const file = files[0];
+
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+
+          reader.onload = function (e) {
+            profileImagePreview.src = e.target.result;
+          };
+
+          reader.readAsDataURL(file);
+        } else {
+          alert('Invalid file type. Please upload an image.');
+        }
+      }
+
+      profileImageInput.addEventListener('change', () => {
+        const files = profileImageInput.files;
+        handleFiles(files);
+      });
+    });
+  </script>
+</body>
+
+</html>

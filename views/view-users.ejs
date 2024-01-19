@@ -1,0 +1,128 @@
+<!-- views/view-users.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Users</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+
+    .container {
+      margin-top: 50px;
+      text-align: center; /* Center align the content in the container */
+    }
+
+    .table {
+      background-color: #fff;
+    }
+
+    .table th, .table td {
+      border: 1px solid #495057; 
+      padding: 10px; 
+    }
+
+    .table thead th {
+      border-top: 2px solid #495057;
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+      background-color: #e9ecef; 
+    }
+
+    .btn {
+      padding: 5px 10px;
+    }
+
+    .btn-info {
+      background-color: #007bff; 
+      border-color: #007bff;
+    }
+
+    .btn-danger {
+      background-color: #dc3545;
+      border-color: #dc3545;
+    }
+
+    .user-photo {
+      max-width: 150px;
+      border-radius: 5px; 
+    }
+
+    .larger-column {
+      width: 20%; 
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="mt-4">View Users</h1>
+
+    <table class="table table-striped mt-4 mx-auto"> <!-- Center align the table using mx-auto -->
+      <thead>
+        <tr>
+          <th>User ID</th>
+          <th>Name</th>
+          <th class="larger-column">Photo</th> 
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% users.forEach(user => { %>
+          <% if(user.role !== "admin") { %>
+            <tr>
+              <td><%= user._id %></td>
+              <td><%= user.avatar.name %></td>
+              <td>
+                <img class="user-photo" src="data:image/<%=user.avatar.profileImage.contentType%>;base64,
+                  <%=user.avatar.profileImage.toString('base64')%>" alt="image not uploaded" >
+              </td>
+              <td>
+                <% if(user.approvalStatus !== "accepted") { %>
+                <button class="btn btn-info" onclick="approveUser('<%= user._id %>')">Done</button>
+                <% } %>
+                <button class="btn btn-danger" onclick="deleteUser('<%= user._id %>')">Delete</button>
+              </td>
+            </tr>
+          <% } %>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    async function approveUser(userId) {
+      try {
+        const res = await fetch('/api/v1/approveUser', {
+          method:'POST',
+          body: JSON.stringify({ userId: userId }),
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        // await fetch('/admin/view-users');
+        location.reload(true);
+        // console.log('done')
+      } catch(err) {
+        console.log(err);
+      }
+    }
+
+    async function deleteUser(userId) {
+      try {
+        const res = await fetch('/api/v1/deleteUser', {
+          method:'DELETE',
+          body: JSON.stringify({ userId: userId }),
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        location.reload(true);
+      } catch(err) {
+        console.log(err);
+      }
+    }
+  </script>
+</body>
+</html>
